@@ -1,39 +1,160 @@
-# Taskbar Widgets
+# AI Usage Bar
 
-Dua widget kecil untuk taskbar Windows 11, ditulis dengan Python + Pillow + tkinter.
+> **Versi sekarang** hanya menampilkan Claude Code: persen besar dan **jam reset** di bawahnya
+> (`10:30 AM`, `besok 3:50 AM`). Pembaca Codex dan Antigravity yang dijelaskan di bawah masih ada
+> di kode (`READERS` di `providers.py`), hanya tidak ditampilkan.
+>
+> Saudaranya: [Net Speed Bar](https://github.com/Arifedisant/NetSpeedBar), kecepatan internet di sebelah kanannya.
 
-| Folder | Isinya |
-| --- | --- |
-| `AIUsageBar/` | Sisa jatah **Claude Code** (persen besar + hitung mundur reset), di ujung kiri taskbar |
-| `NetSpeedBar/` | Kecepatan upload/download (oranye), tepat di kanan widget Claude |
+## Pasang
 
-Keduanya bisa diklik untuk panel detail, diseret untuk pindah posisi, dan klik kanan untuk
-menu (satuan, transparansi, autostart, keluar). Posisi dan setelan disimpan di
-`%LOCALAPPDATA%\AIUsageBar\` dan `%LOCALAPPDATA%\NetSpeedBar\`, bukan di repo ini.
-
-## Pasang ulang di laptop baru
-
-1. Pasang **Python 3.13** dari python.org (centang *Add python.exe to PATH*).
-2. Unduh repo ini (tombol **Code → Download ZIP**, atau `git clone`), lalu taruh dua foldernya
-   di folder profil, jadi `%USERPROFILE%\AIUsageBar` dan `%USERPROFILE%\NetSpeedBar`.
-   Lokasi lain juga bisa; skripnya mencari filenya sendiri dari lokasinya.
-3. Jalankan di PowerShell dari folder repo:
+1. Pasang **Python 3.13** dari python.org (centang *Add python.exe to PATH*), dan Claude Code.
+2. Unduh repo ini (**Code → Download ZIP**, atau `git clone`) dan taruh foldernya di tempat tetap,
+   misalnya `%USERPROFILE%\AIUsageBar`.
+3. Dari folder itu jalankan:
 
    ```powershell
    powershell -ExecutionPolicy Bypass -File .\setup.ps1
    ```
 
-   Skrip itu memasang `psutil` dan `Pillow`, mendaftarkan kedua widget supaya jalan setiap
-   Windows menyala, menambahkan hook status line Claude Code ke `~\.claude\settings.json`
-   (hanya kalau belum ada; salinan lama disimpan sebagai `settings.json.bak-taskbarwidgets`),
-   lalu langsung menyalakan kedua widget.
+   Skrip itu memasang `Pillow`, mendaftarkan autostart, menambahkan hook status line ke
+   `~\.claude\settings.json` (hanya kalau belum ada; salinan lama jadi `settings.json.bak-aiusagebar`),
+   lalu menyalakan widgetnya. Angkanya terisi setelah Claude Code dipakai sekali.
 
-Angka Claude baru muncul setelah Claude Code sudah login dan dipakai sekali, karena sumber
-datanya adalah hook status line (`AIUsageBar/statusline.py`) yang ditulis setiap kali
-Claude Code menggambar status line-nya.
+Tidak ada kunci API atau file login di repo ini; widget hanya membaca file yang ditulis Claude Code
+di komputer sendiri dan tidak memanggil API mana pun.
 
-## Yang sengaja tidak ada di sini
+Strip tipis di ujung kiri taskbar Windows 11 yang menunjukkan berapa banyak
+jatah **Claude Code**, **Codex**, dan **Antigravity** yang sudah terpakai —
+dan tempat login/logout ketiganya.
 
-Tidak ada kunci API, token, atau file login. Widget hanya membaca file yang sudah ditulis
-Claude Code di komputer sendiri (`~/.claude/usage-state.json`, `~/.claude.json`) dan tidak
-memanggil API mana pun.
+```
+● CLAUDE CODE      55%   ● CODEX          65%   ● ANTIGRAVITY   12 prompt
+▓▓▓▓▓▓▓▓░░░░░░░░         ▓▓▓▓▓▓▓▓▓▓▓░░░░         ▁▁▁█▅▁▂▂▂▂
+5 jam · reset 4j 20m     30 hari · reset 24hr    5 jam terakhir · 12 hari ini
+```
+
+Warna aksen mengikuti merek masing-masing, lalu berubah **kuning di 70%** dan
+**merah di 90%**. Bacaan yang sudah kedaluwarsa tidak dipajang seolah-olah masih
+akurat — angkanya meredup dan captionnya berganti jadi umur bacaan (`basi 2j lalu`).
+
+## Cara pakai
+
+| Aksi | Hasil |
+| --- | --- |
+| Klik kartu | Panel detail: semua window limit, akun, tombol Login/Logout/Muat ulang |
+| Klik tombol `Login` di kartu | Membuka terminal login untuk AI yang belum masuk |
+| Seret | Pindah posisi, tersimpan otomatis |
+| Klik kanan | Menu: Akun, muat ulang, transparansi, kembalikan ke pojok, autostart, keluar |
+
+Panel menutup sendiri sedetik setelah pointer pergi.
+
+## Jalan otomatis
+
+Sudah didaftarkan di `HKCU\Software\Microsoft\Windows\CurrentVersion\Run`
+dengan nama `AIUsageBar`, jadi tiap Windows menyala bar-nya muncul lagi di
+tempat yang sama. Mau matikan? Klik kanan → hilangkan centang
+**Jalan saat Windows menyala**.
+
+Saat sign-in, taskbar kadang belum ada ketika skripnya jalan. Karena itu bar
+mengukur ulang dockingnya di detik ke-1, 2, 5, 12, 25, lalu tiap 30 detik —
+juga yang membuatnya menyesuaikan diri kalau resolusi atau skala layar berubah.
+
+Menjalankan manual:
+
+```powershell
+Start-Process "C:\Program Files\Python313\pythonw.exe" `
+  '"C:\Users\<you>\AIUsageBar\aiusagebar.pyw"'
+```
+
+## Dari mana angkanya
+
+Semuanya dibaca dari file yang **memang sudah ditulis** ketiga CLI itu di
+komputer ini. Tidak ada panggilan ke API vendor, tidak ada yang mengintip
+credential store atau cookie browser — keberadaan file kredensial hanya dipakai
+sebagai penanda "sudah login", isinya tidak pernah dibaca.
+
+**Claude Code** — `~/.claude/usage-state.json`, ditulis oleh `statusline.py`
+di folder ini. Claude Code memipa JSON sesinya ke hook itu tiap kali status line
+digambar; hook menyalin `rate_limits` ke file tadi lalu mencetak status line
+kembali. Titik butanya: hook hanya melihat pemakaian yang lewat Claude Code,
+padahal jatah 5 jam dan 7 hari dibagi bersama claude.ai dan aplikasi desktop.
+Akun dan paket dari `~/.claude.json`.
+
+Hook-nya terdaftar di `~/.claude/settings.json`:
+
+```json
+"statusLine": {
+  "type": "command",
+  "command": "\"C:\\Program Files\\Python313\\python.exe\" \"C:\\Users\\<you>\\AIUsageBar\\statusline.py\"",
+  "padding": 0
+}
+```
+
+Kalau blok itu hilang, kartu Claude berhenti diperbarui dan captionnya berganti
+jadi umur bacaan. Hook ini tidak pernah melempar exception — hook yang crash
+akan mematikan status line semua sesi Claude Code, jadi payload rusak cuma
+menghasilkan baris kosong.
+
+**Codex** — objek `rate_limits` terakhir di file sesi terbaru
+(`~/.codex/sessions/…/rollout-*.jsonl`): `used_percent`, `window_minutes`,
+`resets_at`, dan `plan_type`. File itu bisa puluhan MB dan satu barisnya bisa
+lebih besar dari jendela baca mana pun, jadi yang dilakukan adalah menyisir
+teks mentah dari ekor file, bukan memecahnya per baris. Codex baru mengirim
+angka limit setelah balasan pertama dalam sebuah sesi.
+
+**Antigravity** — status login dan email dari log CLI-nya sendiri
+(`applyAuthResult: email=…`). **Sisa kuotanya tidak ada di disk**: quota manager
+Antigravity mengambilnya dari `daily-cloudcode-pa.googleapis.com` dan menyimpannya
+di memori proses yang sedang jalan. Jadi kartunya menampilkan yang benar-benar
+bisa diketahui — jumlah prompt yang kamu kirim dalam 5 jam terakhir dan hari ini —
+bukan persentase karangan.
+
+Karena tidak ada persen untuk digambar, baris grafiknya diisi **sparkline
+aktivitas**: sepuluh kolom, masing-masing 30 menit, tinggi mengikuti jumlah
+prompt di slot itu. Bentuknya sengaja beda dari gauge dua kartu lain supaya
+tidak salah dibaca sebagai persen. Kalau kamu tahu sendiri batasnya, isi lewat
+klik kanan → **Batas prompt Antigravity…** dan kartunya berubah jadi gauge
+sungguhan.
+
+## Login & logout
+
+Claude dan Codex punya sub-perintah auth sungguhan, jadi tombolnya menjalankan
+itu di terminal baru:
+
+| | Login | Logout |
+| --- | --- | --- |
+| Claude Code | `claude auth login` | `claude auth logout` |
+| Codex | `codex login` | `codex logout` |
+| Antigravity | `agy` (selesaikan di dalam antarmukanya) | idem |
+
+`agy --help` tidak punya verb auth sama sekali, jadi tombolnya membuka CLI-nya
+dan menyerahkan urusan itu ke antarmuka Antigravity sendiri, bukan berpura-pura
+ada saklar di sini. Selama 25 detik setelah terminal login terbuka, bar berhenti
+merebut z-order supaya tidak menutupi jendela yang sedang kamu ketik.
+
+## Susunan file
+
+| Path | |
+| --- | --- |
+| `aiusagebar.pyw` | jendela, interaksi, menu, aksi login/logout |
+| `providers.py` | pembacaan tiga provider; jalankan langsung untuk melihat JSON mentahnya |
+| `render.py` | seluruh gambar (Pillow), strip dan panel |
+| `statusline.py` | hook Claude Code; satu-satunya sumber kartu Claude |
+| `%LOCALAPPDATA%\AIUsageBar\config.json` | posisi, transparansi, batas Antigravity |
+
+Gambarnya tidak dibuat dari widget Tk. Bentuk digambar di layer 3x lalu
+diperkecil, teks digambar setelahnya pada ukuran akhir — itu yang bikin sudut
+membulat dan track progres setipis 5px tetap halus di skala DPI berapa pun.
+Warna latar jendela (`#010203`) di-punch jadi transparan, sengaja nyaris hitam
+supaya rumbai anti-aliasing di sudut lebur ke taskbar gelap alih-alih menyala.
+
+## Kalau ada yang aneh
+
+```powershell
+py -3 C:\Users\<you>\AIUsageBar\providers.py   # apa yang sebenarnya terbaca
+```
+
+Bar tidak muncul setelah boot: pastikan value `AIUsageBar` masih ada di key
+`Run`, lalu jalankan manual dengan `python.exe` (bukan `pythonw.exe`) supaya
+error-nya kelihatan.
