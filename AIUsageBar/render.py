@@ -245,10 +245,12 @@ _DAYS = ("Sen", "Sel", "Rab", "Kam", "Jum", "Sab", "Min")
 
 
 def reset_clock(resets, now):
-    """The local wall-clock time of a reset (16 Okt 2026: Arif finds `14.30`
-    easier to read than `4j 20m`). Tomorrow gets `besok`, later a weekday."""
+    """The local wall-clock time of a reset, 12-hour like the taskbar clock
+    (16 Okt 2026: Arif finds `2:30 PM` easier to read than `4j 20m`).
+    Tomorrow gets `besok`, later a weekday."""
     at = time.localtime(resets)
-    clock = "%02d.%02d" % (at.tm_hour, at.tm_min)
+    clock = "%d:%02d %s" % ((at.tm_hour + 11) % 12 + 1, at.tm_min,
+                            "AM" if at.tm_hour < 12 else "PM")
     days = (datetime.date(*at[:3]) - datetime.date(*time.localtime(now)[:3])).days
     if days <= 0:
         return clock
@@ -463,6 +465,13 @@ def render_compact(entry, scale, height, now, hover=None, bg=None):
         draw.text((left + value_w + gap, cap_top), "%", font=f_sup,
                   fill=colour, anchor="lt")
     if sub:
+        # `besok 3:50 AM` is wider than the strip; shrink it rather than let
+        # it clip, so the clock stays centred under the number.
+        room = (COMPACT_W - 3) * s
+        size = 8.5
+        while size > 6 and draw.textlength(sub, font=f_sub) > room:
+            size -= 0.5
+            f_sub = font("regular", size * s)
         draw.text((COMPACT_W * s / 2.0, (dy + 26) * s), sub, font=f_sub,
                   fill=DIM if entry.get("stale") else MUTED, anchor="mm")
 
