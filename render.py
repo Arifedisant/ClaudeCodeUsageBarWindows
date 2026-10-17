@@ -216,7 +216,7 @@ class Layout:
     @classmethod
     def shell_width(cls):
         if CARDS == 1:
-            return COMPACT_W
+            return BADGE_W + COMPACT_W
         return cls.shell_pad_x * 2 + cls.card_w * CARDS + cls.card_gap * (CARDS - 1)
 
 
@@ -412,6 +412,12 @@ def render_strip(entries, scale, height, now, hover=None, bg=None):
 
 COMPACT_W = 50
 COMPACT_H = 32        # = TrafficMonitor's box (48 px at 150 %)
+BADGE_W = 24          # 17 Okt 2026: account pill left of the number (2 accounts)
+
+
+def _badge_text_colour(fill):
+    luma = 0.299 * fill[0] + 0.587 * fill[1] + 0.114 * fill[2]
+    return SHELL_BG if luma > 150 else TEXT
 
 
 def render_compact(entry, scale, height, now, hover=None, bg=None):
@@ -421,13 +427,30 @@ def render_compact(entry, scale, height, now, hover=None, bg=None):
     dragged any more."""
     s = scale
     bg = tuple(bg) if bg else SHELL_BG
-    canvas = Canvas(COMPACT_W, height, s)
+    width = BADGE_W + COMPACT_W
+    canvas = Canvas(width, height, s)
     fill = _mix(bg, (255, 255, 255), 0.07) if hover == 0 else bg
     canvas.shapes.rectangle((0, 0, canvas.layer.width, canvas.layer.height),
                             fill=bg)
     if hover == 0:
-        canvas.rounded((0, 0, COMPACT_W, height), 6, fill=fill)
+        canvas.rounded((0, 0, width, height), 6, fill=fill)
+
+    # Which Claude account is signed in, so two accounts can't be confused.
+    dy = (height - COMPACT_H) / 2.0
+    badge = entry.get("badge") if entry.get("signed_in") else None
+    badge_fill = _hex(badge["color"]) if badge else None
+    if badge:
+        canvas.rounded((2, dy + 9, BADGE_W - 1, dy + 23), 4, fill=badge_fill)
     draw = canvas.finish()
+
+    if badge:
+        size = 7.5
+        f_badge = font("bold", size * s)
+        while size > 5 and draw.textlength(badge["label"], font=f_badge) > (BADGE_W - 6) * s:
+            size -= 0.5
+            f_badge = font("bold", size * s)
+        draw.text(((2 + BADGE_W - 1) * s / 2.0, (dy + 16) * s), badge["label"],
+                  font=f_badge, fill=_badge_text_colour(badge_fill), anchor="mm")
 
     online = entry.get("signed_in")
     metric = _primary(entry)
@@ -451,12 +474,11 @@ def render_compact(entry, scale, height, now, hover=None, bg=None):
     f_sup = font("semibold", 8 * s)
     f_sub = font("regular", 8.5 * s)
 
-    dy = (height - COMPACT_H) / 2.0
     show_sup = online and pct is not None
     value_w = draw.textlength(value, font=f_value)
     sup_w = draw.textlength("%", font=f_sup) if show_sup else 0
     gap = 1 * s if show_sup else 0
-    left = (COMPACT_W * s - (value_w + gap + sup_w)) / 2.0
+    left = BADGE_W * s + (COMPACT_W * s - (value_w + gap + sup_w)) / 2.0
     base = (dy + 18) * s                         # baseline of the big number
 
     draw.text((left, base), value, font=f_value, fill=colour, anchor="ls")
@@ -472,7 +494,7 @@ def render_compact(entry, scale, height, now, hover=None, bg=None):
         while size > 6 and draw.textlength(sub, font=f_sub) > room:
             size -= 0.5
             f_sub = font("regular", size * s)
-        draw.text((COMPACT_W * s / 2.0, (dy + 26) * s), sub, font=f_sub,
+        draw.text(((BADGE_W + COMPACT_W / 2.0) * s, (dy + 26) * s), sub, font=f_sub,
                   fill=DIM if entry.get("stale") else MUTED, anchor="mm")
 
     hitboxes = [("card:" + entry["id"], 0, 0, canvas.width, canvas.height)]

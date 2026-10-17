@@ -254,7 +254,22 @@ DEFAULT_CONFIG = {
     "y": None,
     "opacity": 100,
     "limits": {},          # provider id -> self-declared cap, e.g. antigravity
+    "accounts": {},        # Claude email -> {"label": "ABC", "color": "#RRGGBB"}
 }
+
+BADGE_COLOURS = ("#E0795A", "#4A90E2", "#4CB782", "#B07CE8")
+
+
+def account_badge(config, email):
+    """The pill that says which Claude account is signed in. Unconfigured
+    accounts get the last dot-part of the email's name and a fixed colour."""
+    if not email:
+        return None
+    custom = (config.get("accounts") or {}).get(email) or {}
+    label = custom.get("label") or email.split("@")[0].split(".")[-1][:4].upper()
+    colour = custom.get("color") or BADGE_COLOURS[
+        sum(email.encode("utf-8")) % len(BADGE_COLOURS)]
+    return {"label": label, "color": colour}
 
 
 def load_config():
@@ -430,14 +445,16 @@ class UsageBar:
         rect = taskbar_rect()
         width = round(render.Layout.shell_width() * self.scale)
         height = round(self.height * self.scale)
-        # Default spot (chosen 17 Oct 2026): 340.67 logical
-        # px (511 px at 150 %) left of the taskbar's right edge, i.e. to the
-        # right of Net Speed Bar, before the tray icons.
+        # Default spot (chosen 17 Oct 2026): the number's left edge 340.67
+        # logical px (511 px at 150 %) left of the taskbar's right edge, i.e.
+        # right of Net Speed Bar, before the tray icons; the account pill
+        # grows to the left of that.
+        offset = round((340.67 + render.BADGE_W) * self.scale)
         if rect and 24 < rect[3] - rect[1] < 200:
-            x = rect[2] - round(340.67 * self.scale)
+            x = rect[2] - offset
             y = rect[1] + (rect[3] - rect[1] - height) // 2
         else:
-            x = self.root.winfo_screenwidth() - round(340.67 * self.scale)
+            x = self.root.winfo_screenwidth() - offset
             y = self.root.winfo_screenheight() - height - round(8 * self.scale)
         return self._clamp(x, y, width, height)
 
@@ -530,6 +547,7 @@ class UsageBar:
         self.bg = self._sample_bg() or self.bg
         signature = (self.hover, round(now / 30), self.bg,
                      tuple((e["id"], e["signed_in"], e.get("stale"),
+                            str(e.get("badge")),
                             tuple((m["label"], round(m["pct"] or -1, 1),
                                    m["resets_at"]) for m in e["metrics"]),
                             (e["counter"] or {}).get("value"))
@@ -599,6 +617,8 @@ class UsageBar:
         except queue.Empty:
             pass
         if latest is not None:
+            for entry in latest:
+                entry["badge"] = account_badge(self.config, entry.get("account"))
             self.entries = latest
             self._draw_strip()
             if self.panel_for:

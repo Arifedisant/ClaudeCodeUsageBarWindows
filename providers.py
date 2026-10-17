@@ -262,12 +262,16 @@ def read_claude():
 
     # Two writers feed the same shape; whichever ran last is the truer number.
     hook = _load_json(CLAUDE_DIR / "usage-state.json")
+    if hook and email and (hook.get("account") or hook.get("accounts")):
+        # 17 Okt 2026: two accounts share ~/.claude; only show the reading
+        # that belongs to the account signed in now.
+        hook = (hook.get("accounts") or {}).get(email)
     bridge = _load_json(CLAUDE_DIR / "usage-state-bridge.json")
     candidates = [(s, tag) for s, tag in ((hook, "hook Claude Code"),
                                           (bridge, "QuotaBar bridge")) if s]
     if not candidates:
-        result["note"] = ("Belum ada bacaan. Pasang status line hook QuotaBar, "
-                          "lalu jalankan satu sesi Claude Code.")
+        result["note"] = ("Belum ada bacaan untuk akun ini. Kirim satu pesan "
+                          "di Claude Code, angkanya muncul setelah balasan.")
         return result
 
     state, source = max(candidates, key=lambda item: item[0].get("ts") or 0)

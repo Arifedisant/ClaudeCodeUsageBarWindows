@@ -27,7 +27,29 @@ import sys
 import time
 from pathlib import Path
 
-STATE_PATH = Path(os.environ.get("USERPROFILE") or Path.home()) / ".claude" / "usage-state.json"
+HOME = Path(os.environ.get("USERPROFILE") or Path.home())
+STATE_PATH = HOME / ".claude" / "usage-state.json"
+PROFILE_PATH = HOME / ".claude.json"
+
+
+def _account():
+    """Email of the signed-in Claude account, so each account keeps its own
+    numbers (17 Okt 2026: two accounts share one ~/.claude)."""
+    try:
+        with open(PROFILE_PATH, "r", encoding="utf-8") as fh:
+            email = (json.load(fh).get("oauthAccount") or {}).get("emailAddress")
+        return email if isinstance(email, str) else ""
+    except Exception:
+        return ""
+
+
+def _previous_accounts():
+    try:
+        with open(STATE_PATH, "r", encoding="utf-8") as fh:
+            accounts = json.load(fh).get("accounts")
+        return accounts if isinstance(accounts, dict) else {}
+    except Exception:
+        return {}
 
 
 def _obj(parent, name):
@@ -61,6 +83,16 @@ def _write_state(five, week):
         if window["resets_at"] is not None:
             entry["resets_at"] = window["resets_at"]
         payload[name] = entry
+
+    # The top-level fields stay the latest reading; `accounts` keeps the last
+    # reading per account so switching back doesn't show the other's number.
+    email = _account()
+    accounts = _previous_accounts()
+    if email:
+        accounts[email] = dict(payload)
+        payload["account"] = email
+    if accounts:
+        payload["accounts"] = accounts
 
     temp = STATE_PATH.with_suffix(".json.tmp")
     try:

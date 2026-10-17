@@ -16,6 +16,10 @@ upload/download internet, biasanya dipasang tepat di sebelah kirinya.
 
 ## Fitur
 
+- **Label akun** berwarna di kiri angka (maks. 4 huruf, misalnya `KRJ` oranye, `PRB` biru), jadi kalau punya dua akun
+  Claude tidak tertukar. Bawaannya diambil dari nama email; ganti lewat `config.json`:
+  `"accounts": {"nama@contoh.com": {"label": "KRJ", "color": "#E0795A"}}`. Tiap akun menyimpan angkanya sendiri; setelah ganti akun bar menulis *menunggu* sampai ada balasan
+  pertama dari akun itu.
 - **Persen besar** jatah 5 jam Claude Code, warnanya berubah **kuning di 70%** dan **merah di 90%**.
 - **Jam reset** format 12 jam (AM/PM), seperti jam di taskbar. Tulisan mengecil otomatis supaya tetap rata tengah.
 - **Klik** = panel detail: jatah 5 jam dan 7 hari, jam reset + sisa waktunya, akun, tombol Login/Logout/Muat ulang.
@@ -84,7 +88,7 @@ angka sebenarnya bisa lebih tinggi dari yang tampil.
 | `render.py` | semua gambar (Pillow): strip kecil dan panel detail |
 | `statusline.py` | hook status line Claude Code, sumber angkanya |
 | `setup.ps1` | pemasang untuk komputer baru |
-| `%LOCALAPPDATA%\AIUsageBar\config.json` | posisi dan transparansi (dibuat otomatis) |
+| `%LOCALAPPDATA%\AIUsageBar\config.json` | posisi, transparansi, label akun (dibuat otomatis) |
 
 Kode untuk membaca Codex (OpenAI) dan Antigravity (Google) masih ada di `providers.py` dari versi lama,
 tapi tidak ditampilkan (`READERS = (read_claude,)`).
