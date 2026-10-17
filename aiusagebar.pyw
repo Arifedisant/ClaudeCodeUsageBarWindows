@@ -430,11 +430,14 @@ class UsageBar:
         rect = taskbar_rect()
         width = round(render.Layout.shell_width() * self.scale)
         height = round(self.height * self.scale)
+        # Default spot (chosen 17 Oct 2026): 340.67 logical
+        # px (511 px at 150 %) left of the taskbar's right edge, i.e. to the
+        # right of Net Speed Bar, before the tray icons.
         if rect and 24 < rect[3] - rect[1] < 200:
-            x = rect[0] + round(14 * self.scale)
+            x = rect[2] - round(340.67 * self.scale)
             y = rect[1] + (rect[3] - rect[1] - height) // 2
         else:
-            x = round(14 * self.scale)
+            x = self.root.winfo_screenwidth() - round(340.67 * self.scale)
             y = self.root.winfo_screenheight() - height - round(8 * self.scale)
         return self._clamp(x, y, width, height)
 
@@ -764,7 +767,7 @@ class UsageBar:
             opacity.add_command(label="%d%%" % value,
                                 command=lambda v=value: self._set_opacity(v))
         self.menu.add_cascade(label="Transparansi", menu=opacity)
-        self.menu.add_command(label="Kembalikan ke pojok taskbar",
+        self.menu.add_command(label="Kembalikan ke posisi awal",
                               command=self._reset_position)
         self.menu.add_separator()
 

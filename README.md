@@ -12,14 +12,14 @@ Cocok untuk pengguna Claude Code dengan langganan **Claude Pro / Max**, supaya t
 limit di tengah kerja. Ditulis dengan Python (Pillow + tkinter), satu folder, tanpa installer.
 
 Saudaranya: [Net Speed Bar untuk Windows](https://github.com/Arifedisant/NetSpeedBarWindows), kecepatan
-upload/download internet, biasanya dipasang tepat di sebelah kanannya.
+upload/download internet, biasanya dipasang tepat di sebelah kirinya.
 
 ## Fitur
 
 - **Persen besar** jatah 5 jam Claude Code, warnanya berubah **kuning di 70%** dan **merah di 90%**.
 - **Jam reset** format 12 jam (AM/PM), seperti jam di taskbar. Tulisan mengecil otomatis supaya tetap rata tengah.
 - **Klik** = panel detail: jatah 5 jam dan 7 hari, jam reset + sisa waktunya, akun, tombol Login/Logout/Muat ulang.
-- **Seret** = pindah posisi (tersimpan). **Klik kanan** = Akun, muat ulang, transparansi, kembalikan ke pojok,
+- **Seret** = pindah posisi (tersimpan). **Klik kanan** = Akun, muat ulang, transparansi, kembalikan ke posisi awal,
   jalan saat Windows menyala, keluar.
 - Latar mengikuti warna taskbar, jadi tampak transparan tapi tetap bisa diklik dan diseret.
 - Angka yang sudah basi (Claude Code lama tidak dipakai) tidak dipajang seolah masih akurat: tulisan meredup jadi `basi`.
